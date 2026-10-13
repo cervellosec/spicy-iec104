@@ -865,7 +865,7 @@ type AsduIdent: record {
 
 const ports = {
     2404/tcp
-};
+} &redef;
 
 event zeek_init() &priority=5
 {

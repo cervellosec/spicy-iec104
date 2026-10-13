@@ -7,10 +7,17 @@ export {
 		ts: time &log;
 		uid: string &log;
 		id: conn_id &log;
+		# Cervello: per-packet sender direction — required for attributing
+		# the reported value to the interface that sent it.
+		is_orig: bool &log;
 
 		asdu_type: IEC104TypeID &log;
 		cot: IEC104CoT &log;
 		ca: count &log;
+		# Cervello: originator address and the COT P/N + test bits.
+		oa: count &log;
+		pn: bool &log;
+		test: bool &log;
 
 		ioa: count &log;
 		value: string &log &optional;
@@ -37,10 +44,14 @@ function m_emit(c: connection, is_orig: bool, ioa: count, value: string,
 	r$ts = network_time();
 	r$uid = c$uid;
 	r$id = c$id;
+	r$is_orig = is_orig;
 
 	r$asdu_type = x$type_id;
 	r$cot = x$cot;
 	r$ca = x$ca;
+	r$oa = x$originator_address;
+	r$pn = x$pn;
+	r$test = x$test;
 
 	r$ioa = ioa;
 	if ( value != "" )
