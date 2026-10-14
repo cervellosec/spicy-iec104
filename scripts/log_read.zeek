@@ -26,7 +26,7 @@ function read_new_txkey(_basekey: string): string
 	}
 
 function read_basekey(c: connection, action: string, ca: count,
-    asdu_type: IEC104TypeID, ioa: count): string
+    asdu_type: iec104::TypeID, ioa: count): string
 	{
 	return fmt("%s|%s|ca=%d|type=%s|ioa=%d", c$uid, action, ca, fmt("%s",
 	    asdu_type), ioa);

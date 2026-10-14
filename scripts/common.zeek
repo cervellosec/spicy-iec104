@@ -1,8 +1,8 @@
 module iec104;
 
 type AsduCtx: record {
-	type_id: IEC104TypeID;
-	cot: IEC104CoT;
+	type_id: iec104::TypeID;
+	cot: iec104::CoT;
 	ca: count;
 
 	pn: bool;
@@ -34,7 +34,7 @@ function cp56_to_str(tt: CP56Time2a): string
 
 function dummy_asdu_ctx(): AsduCtx
 	{
-	return AsduCtx($type_id=ASDU_TYPEUNDEF, $cot=Cot_Unused, $ca=0, $pn=F, $test=F,
+	return AsduCtx($type_id=iec104::TypeID_ASDU_TYPEUNDEF, $cot=iec104::CoT_Cot_Unused, $ca=0, $pn=F, $test=F,
 	    $originator_address=0);
 	}
 
@@ -57,23 +57,23 @@ event asdu(c: connection, is_orig: bool, a: AsduIdent) &priority=5
 		c$iec104_asdu_ctx_resp = x;
 	}
 
-const inrogen_cots: set[IEC104CoT] = { Inrogen, Inro1, Inro2, Inro3, Inro4,
-    Inro5, Inro6, Inro7, Inro8, Inro9, Inro10, Inro11, Inro12, Inro13, Inro14,
-    Inro15, Inro16 };
+const inrogen_cots: set[iec104::CoT] = { iec104::CoT_Inrogen, iec104::CoT_Inro1, iec104::CoT_Inro2, iec104::CoT_Inro3, iec104::CoT_Inro4,
+    iec104::CoT_Inro5, iec104::CoT_Inro6, iec104::CoT_Inro7, iec104::CoT_Inro8, iec104::CoT_Inro9, iec104::CoT_Inro10, iec104::CoT_Inro11, iec104::CoT_Inro12, iec104::CoT_Inro13, iec104::CoT_Inro14,
+    iec104::CoT_Inro15, iec104::CoT_Inro16 };
 
-function cot_is_inrogen(_cot: IEC104CoT): bool
+function cot_is_inrogen(_cot: iec104::CoT): bool
 	{
 	return _cot in inrogen_cots;
 	}
 
-function cot_is_hard_error(_cot: IEC104CoT): bool
+function cot_is_hard_error(_cot: iec104::CoT): bool
 	{
-	return _cot == ::UnkType
-	    || _cot == ::UnkCause
-	    || _cot == ::UnkAsduAddr
-	    || _cot == ::UnkObjAddr
-	    || _cot == ::Deact
-	    || _cot == ::Deactcon;
+	return _cot == iec104::CoT_UnkType
+	    || _cot == iec104::CoT_UnkCause
+	    || _cot == iec104::CoT_UnkAsduAddr
+	    || _cot == iec104::CoT_UnkObjAddr
+	    || _cot == iec104::CoT_Deact
+	    || _cot == iec104::CoT_Deactcon;
 	}
 
 function append_reason(_cur: string, _add: string): string

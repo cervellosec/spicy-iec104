@@ -30,8 +30,8 @@ export {
 		id: conn_id &log;
 		is_orig: bool &log;
 
-		asdu_type: IEC104TypeID &log;
-		cot: IEC104CoT &log;
+		asdu_type: iec104::TypeID &log;
+		cot: iec104::CoT &log;
 		oa: count &log;
 		ca: count &log;
 
@@ -46,7 +46,7 @@ export {
 		id: conn_id &log;
 		is_orig: bool &log;
 
-		cot: IEC104CoT &log;
+		cot: iec104::CoT &log;
 		ca: count &log;
 		ioa: count &log;
 
@@ -97,7 +97,7 @@ event iec104::u(c: connection, is_orig: bool, startdt: count, stopdt: count,
 	}
 
 event iec104::unknown_asdu(c: connection, is_orig: bool,
-    type_id: IEC104TypeID, hex: string)
+    type_id: iec104::TypeID, hex: string)
 	{
 	local x = ctx(c, is_orig);
 

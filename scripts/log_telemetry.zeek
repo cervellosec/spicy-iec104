@@ -11,8 +11,8 @@ export {
 		# the reported value to the interface that sent it.
 		is_orig: bool &log;
 
-		asdu_type: IEC104TypeID &log;
-		cot: IEC104CoT &log;
+		asdu_type: iec104::TypeID &log;
+		cot: iec104::CoT &log;
 		ca: count &log;
 		# Cervello: originator address and the COT P/N + test bits.
 		oa: count &log;

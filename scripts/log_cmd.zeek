@@ -2,12 +2,12 @@
 #
 # FIFO pipelining:
 # We assume both peers send messages in deterministic/correct order:
-#   - Actcon corresponds to Acts in FIFO order (per basekey)
-#   - ActTerm corresponds to accepted Actcons in FIFO order (per basekey)
+#   - iec104::CoT_Actcon corresponds to Acts in FIFO order (per basekey)
+#   - iec104::CoT_ActTerm corresponds to accepted Actcons in FIFO order (per basekey)
 #
 # This simplifies correlation: we keep two FIFO queues per basekey:
-#   pending_actcon: tx waiting for Actcon
-#   pending_actterm: tx waiting for ActTerm
+#   pending_actcon: tx waiting for iec104::CoT_Actcon
+#   pending_actterm: tx waiting for iec104::CoT_ActTerm
 
 module iec104;
 
@@ -28,8 +28,8 @@ export {
 		is_orig: bool &log;
 
 		action: string &log;
-		asdu_type: IEC104TypeID &log;
-		cot: IEC104CoT &log;
+		asdu_type: iec104::TypeID &log;
+		cot: iec104::CoT &log;
 		ca: count &log;
 
 		ioa: count &log &optional;
@@ -56,8 +56,8 @@ export {
 		is_orig: bool &log;
 
 		action: string &log;
-		asdu_type: IEC104TypeID &log;
-		cot: IEC104CoT &log;
+		asdu_type: iec104::TypeID &log;
+		cot: iec104::CoT &log;
 		ca: count &log;
 
 		ioa: count &log &optional;
@@ -79,8 +79,8 @@ export {
 		is_orig: bool &log;
 
 		action: string &log;
-		asdu_type: IEC104TypeID &log;
-		cot: IEC104CoT &log;
+		asdu_type: iec104::TypeID &log;
+		cot: iec104::CoT &log;
 		ca: count &log;
 
 		ioa: count &log &optional;
@@ -106,8 +106,8 @@ export {
 		is_orig: bool &log;
 
 		action: string &log;
-		asdu_type: IEC104TypeID &log;
-		cot: IEC104CoT &log;
+		asdu_type: iec104::TypeID &log;
+		cot: iec104::CoT &log;
 		ca: count &log;
 
 		ioa: count &log &optional;
@@ -134,8 +134,8 @@ export {
 		is_orig: bool &log;
 
 		action: string &log;
-		asdu_type: IEC104TypeID &log;
-		cot: IEC104CoT &log;
+		asdu_type: iec104::TypeID &log;
+		cot: iec104::CoT &log;
 		ca: count &log;
 
 		ioa: count &log &optional;
@@ -171,8 +171,8 @@ type AATState: record {
 	is_orig: bool;
 
 	action: string;
-	asdu_type: IEC104TypeID;
-	cot: IEC104CoT;
+	asdu_type: iec104::TypeID;
+	cot: iec104::CoT;
 	ca: count;
 
 	ioa: count &optional;
@@ -532,17 +532,17 @@ function aat_handle_fifo(c: connection, is_orig: bool, action: string,
 	local _txkey = "";
 	local _st: AATState;
 
-	if ( _x$cot == Act )
+	if ( _x$cot == iec104::CoT_Act )
 		{
 		_txkey = aat_new_txkey(basekey);
 		q_push(q_actcon, basekey, _txkey);
 
 		_st = fill(aat_init(c, is_orig, action, _x, basekey, _txkey));
 		_st$ts = _now;
-		_st$cot = Act;
+		_st$cot = iec104::CoT_Act;
 		_st$is_orig = is_orig;
 		_st$seen_act = T;
-		_st = aat_mark_error(_st, "Act", _x);
+		_st = aat_mark_error(_st, "iec104::CoT_Act", _x);
 
 		# Broadcast exception: do not require confirmations, but keep tx open.
 		if ( _x$ca == BROADCAST_ADDR )
@@ -555,11 +555,11 @@ function aat_handle_fifo(c: connection, is_orig: bool, action: string,
 		return;
 		}
 
-	if ( _x$cot == Actcon )
+	if ( _x$cot == iec104::CoT_Actcon )
 		{
 		_txkey = q_pop_front(q_actcon, basekey);
 		if ( _txkey == "" )
-			_txkey = aat_new_txkey(basekey); # missing Act observed
+			_txkey = aat_new_txkey(basekey); # missing iec104::CoT_Act observed
 
 		_st = _txkey in t ? t[_txkey] : fill(aat_init(c, is_orig, action, _x, basekey,
 		    _txkey));
@@ -578,9 +578,9 @@ function aat_handle_fifo(c: connection, is_orig: bool, action: string,
 
 		_st$actcon_ts = _now;
 		_st$seen_actcon = T;
-		_st = aat_mark_error(_st, "Actcon", _x);
+		_st = aat_mark_error(_st, "iec104::CoT_Actcon", _x);
 
-		# Negative Actcon: no ActTerm expected; finalize now.
+		# Negative Actcon: no iec104::CoT_ActTerm expected; finalize now.
 		if ( _x$pn )
 			{
 			_st$expect_actterm = F;
@@ -595,7 +595,7 @@ function aat_handle_fifo(c: connection, is_orig: bool, action: string,
 		return;
 		}
 
-	if ( _x$cot == ActTerm )
+	if ( _x$cot == iec104::CoT_ActTerm )
 		{
 		_txkey = q_pop_front(q_actterm, basekey);
 		if ( _txkey == "" )
@@ -616,7 +616,7 @@ function aat_handle_fifo(c: connection, is_orig: bool, action: string,
 
 		_st$actterm_ts = _now;
 		_st$seen_actterm = T;
-		_st = aat_mark_error(_st, "ActTerm", _x);
+		_st = aat_mark_error(_st, "iec104::CoT_ActTerm", _x);
 
 		_st = aat_finalize(_st, F);
 		emit(_st);
@@ -724,7 +724,7 @@ global p_state: table[string] of AATState &write_expire=p_tx_timeout
 # -----------------------------------------------------------------------------
 
 function write_basekey(c: connection, action: string, ca: count,
-    asdu_type: IEC104TypeID, ioa: count, value: string, se: bool,
+    asdu_type: iec104::TypeID, ioa: count, value: string, se: bool,
     qualifier: count): string
 	{
 	return fmt("%s|%s|ca=%d|type=%s|ioa=%d|val=%s|se=%s|q=%d", c$uid, action, ca,
@@ -739,7 +739,7 @@ function handle_write_cmd(c: connection, is_orig: bool, action: string,
 	    qualifier);
 
 	# Broadcast fallback: if reply uses real CA, try to map to earlier CA=BROADCAST_ADDR.
-	if ( _x$cot != Act && _x$ca != BROADCAST_ADDR )
+	if ( _x$cot != iec104::CoT_Act && _x$ca != BROADCAST_ADDR )
 		{
 		if ( _basekey !in write_q_actcon && _basekey !in write_q_actterm )
 			{
@@ -764,7 +764,7 @@ function handle_write_cmd(c: connection, is_orig: bool, action: string,
 	}
 
 function query_basekey(c: connection, action: string, ca: count,
-    asdu_type: IEC104TypeID, ioa: count, qoi: count, rqt: count, frz: count)
+    asdu_type: iec104::TypeID, ioa: count, qoi: count, rqt: count, frz: count)
     : string
 	{
 	return fmt("%s|%s|ca=%d|type=%s|ioa=%d|qoi=%d|rqt=%d|frz=%d", c$uid, action, ca,
@@ -778,7 +778,7 @@ function handle_query_cmd(c: connection, is_orig: bool, action: string,
 	local _basekey = query_basekey(c, action, _x$ca, _x$type_id, ioa, qoi, rqt,
 	    frz);
 
-	if ( _x$cot != Act && _x$ca != BROADCAST_ADDR )
+	if ( _x$cot != iec104::CoT_Act && _x$ca != BROADCAST_ADDR )
 		{
 		if ( _basekey !in query_q_actcon && _basekey !in query_q_actterm )
 			{
@@ -804,10 +804,10 @@ function handle_query_cmd(c: connection, is_orig: bool, action: string,
 		});
 	}
 
-function ctrl_basekey(c: connection, action: string, asdu_type: IEC104TypeID,
+function ctrl_basekey(c: connection, action: string, asdu_type: iec104::TypeID,
     ioa: count, time_sync: string, tsc: count, qrp: count): string
 	{
-	# Keep CA out (Act may use BROADCAST_ADDR, replies real CA).
+	# Keep CA out (iec104::CoT_Act may use BROADCAST_ADDR, replies real CA).
 	return fmt("%s|%s|type=%s|ioa=%d|ts=%s|tsc=%d|qrp=%d", c$uid, action, fmt("%s",
 	    asdu_type), ioa, time_sync, tsc, qrp);
 	}
@@ -838,7 +838,7 @@ function handle_ctrl_cmd(c: connection, is_orig: bool, action: string,
 # -----------------------------------------------------------------------------
 
 function p_me_basekey(c: connection, action: string, ca: count,
-    asdu_type: IEC104TypeID, ioa: count, value: string, kpa: count, pop: bool,
+    asdu_type: iec104::TypeID, ioa: count, value: string, kpa: count, pop: bool,
     lpc: bool): string
 	{
 	return fmt("%s|%s|ca=%d|type=%s|ioa=%d|val=%s|kpa=%d|pop=%s|lpc=%s", c$uid,
@@ -859,7 +859,7 @@ function handle_p_me(c: connection, is_orig: bool, action: string, ioa: count,
 	    pop, lpc);
 
 	# Broadcast fallback: map reply CA back to CA=BROADCAST_ADDR tx.
-	if ( _x$cot != Act && _x$ca != BROADCAST_ADDR )
+	if ( _x$cot != iec104::CoT_Act && _x$ca != BROADCAST_ADDR )
 		{
 		if ( _basekey !in p_q_actcon && _basekey !in p_q_actterm )
 			{
@@ -885,7 +885,7 @@ function handle_p_me(c: connection, is_orig: bool, action: string, ioa: count,
 	}
 
 function p_ac_basekey(c: connection, action: string, ca: count,
-    asdu_type: IEC104TypeID, ioa: count, qpa: count): string
+    asdu_type: iec104::TypeID, ioa: count, qpa: count): string
 	{
 	return fmt("%s|%s|ca=%d|type=%s|ioa=%d|qpa=%d", c$uid, action, ca, fmt("%s",
 	    asdu_type), ioa, qpa);
@@ -902,7 +902,7 @@ function handle_p_ac(c: connection, is_orig: bool, action: string, ioa: count,
 
 	local _basekey = p_ac_basekey(c, action, _x$ca, _x$type_id, ioa, qpa);
 
-	if ( _x$cot != Act && _x$ca != BROADCAST_ADDR )
+	if ( _x$cot != iec104::CoT_Act && _x$ca != BROADCAST_ADDR )
 		{
 		if ( _basekey !in p_q_actcon && _basekey !in p_q_actterm )
 			{
