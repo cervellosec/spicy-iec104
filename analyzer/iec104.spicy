@@ -341,7 +341,7 @@ public type CoT = enum {
 };
 
 type SIQ = unit {
-    : bitfield(8) {
+    b: bitfield(8) {
         spi: 0;
         # : 1..3 = 0;
         bl: 4;
@@ -352,7 +352,7 @@ type SIQ = unit {
 };
 
 type DIQ = unit {
-    : bitfield(8) {
+    b: bitfield(8) {
         dpi: 0..1;
         # : 2..3 = 0;
         bl: 4;
@@ -363,7 +363,7 @@ type DIQ = unit {
 };
 
 type QD = unit {
-    : bitfield(8) {
+    b: bitfield(8) {
         sq: 0..4;
         cy: 5;
         ca: 6;
@@ -372,7 +372,7 @@ type QD = unit {
 };
 
 type QDS = unit {
-    : bitfield(8) {
+    b: bitfield(8) {
         ov: 0;
         # : 1..3 = 0;
         bl: 4;
@@ -383,7 +383,7 @@ type QDS = unit {
 };
 
 type SEP = unit {
-    : bitfield(8) {
+    b: bitfield(8) {
         es: 0..1;
         # : 2 = 0;
         ei: 3;
@@ -395,7 +395,7 @@ type SEP = unit {
 };
 
 type QDP = unit {
-    : bitfield(8) {
+    b: bitfield(8) {
         # : 0..2 = 0;
         ei: 3;
         bl: 4;
@@ -406,7 +406,7 @@ type QDP = unit {
 };
 
 type SEPstart = unit {
-    : bitfield(8) {
+    b: bitfield(8) {
         gs: 0;
         sl1: 1;
         sl2: 2;
@@ -418,7 +418,7 @@ type SEPstart = unit {
 };
 
 type OCI = unit {
-    : bitfield(8) {
+    b: bitfield(8) {
         gc: 0;
         cl1: 1;
         cl2: 2;
@@ -428,7 +428,7 @@ type OCI = unit {
 };
 
 type SCO = unit {
-    : bitfield(8) {
+    b: bitfield(8) {
         scs: 0;
         # : 1 = 0;
         qu: 2..6;
@@ -437,7 +437,7 @@ type SCO = unit {
 };
 
 type DCO = unit {
-    : bitfield(8) {
+    b: bitfield(8) {
         dcs: 0..1;
         qu: 2..6;
         se: 7;
@@ -445,7 +445,7 @@ type DCO = unit {
 };
 
 type RCO = unit {
-    : bitfield(8) {
+    b: bitfield(8) {
         rcs: 0..1;
         qu: 2..6;
         se: 7;
@@ -453,28 +453,28 @@ type RCO = unit {
 };
 
 type QOS = unit {
-    : bitfield(8) {
+    b: bitfield(8) {
         ql: 0..6;
         se: 7;
     };
 };
 
 type VTI = unit {
-    : bitfield(8) {
+    b: bitfield(8) {
         val: 0..6;
         ts: 7;
     };
 };
 
 type QCC = unit {
-    : bitfield(8) {
+    b: bitfield(8) {
         rqt: 0..5;
         frz: 6..7;
     };
 };
 
 type QPM = unit {
-    : bitfield(8) {
+    b: bitfield(8) {
         kpa: 0..5;
         pop: 6;
         lpc: 7;
@@ -483,7 +483,7 @@ type QPM = unit {
 
 type CP24Time2a = unit {
     ms: uint16;
-    : bitfield(8) {
+    b: bitfield(8) {
         minute: 0..5;
         # : 6 = 0;
         iv: 7;
@@ -492,25 +492,25 @@ type CP24Time2a = unit {
 
 type CP56Time2a = unit {
     ms: uint16;
-    : bitfield(8) {
+    b: bitfield(8) {
         minute: 0..5;
         # : 6 = 0;
         iv: 7;
     };
-    : bitfield(8) {
+    b2: bitfield(8) {
         hour: 0..4;
         # : 5..6 = 0;
         su: 7;
     };
-    : bitfield(8) {
+    b3: bitfield(8) {
         day: 0..4;
         dow: 5..7;
     };
-    : bitfield(8) {
+    b4: bitfield(8) {
         month: 0..3;
         # : 4..7 = 0;
     };
-    : bitfield(8) {
+    b5: bitfield(8) {
         year: 0..6;
         # : 7 = 0;
     };
@@ -1044,7 +1044,7 @@ type C_BO_TA_1_io = unit(inout id: AsduIdent) {
 
 type M_EI_NA_1_io = unit(inout id: AsduIdent) {
     obj_addr: bytes &size=3 &convert=$$.to_uint(spicy::ByteOrder::Little) if (!id.x.sq);
-    : bitfield(8) {
+    b: bitfield(8) {
         coi: 0..6;
         lpc: 7;
     };
@@ -1298,40 +1298,49 @@ type Ctrl = unit(inout apdu: Apdu) {
 };
 
 public type Ctrl_i = unit(inout apdu: Apdu) {
-    : bitfield(32) {
-      tag: 0 = 0;
+    # Cervello: constant expectations in bitfields need Spicy > 1.8 (Zeek
+    # 6.0.x ships 1.8), so the I/S/U tag constants are validated with an
+    # explicit reject instead of `= <const>` field expectations.
+    b: bitfield(32) {
+      tag: 0;
       ssn: 1..15;
-      unused: 16 = 0;
+      unused: 16;
       rsn: 17..31;
     };
 
     on %done {
+        if ( self.b.tag != 0 || self.b.unused != 0 )
+            reject;
         apdu.format = Format::I;
     }
 };
 
 public type Ctrl_s = unit(inout apdu: Apdu) {
-    : bitfield(32) {
-      tag: 0..1 = 1;
-      unused: 2..16 = 0;
+    b: bitfield(32) {
+      tag: 0..1;
+      unused: 2..16;
       rsn: 17..31;
     };
 
     on %done {
+        if ( self.b.tag != 1 || self.b.unused != 0 )
+            reject;
         apdu.format = Format::S;
     }
 };
 
 public type Ctrl_u = unit(inout apdu: Apdu) {
-    : bitfield(32) {
-      tag: 0..1 = 3;
+    b: bitfield(32) {
+      tag: 0..1;
       startdt: 2..3;
       stopdt: 4..5;
       testfr: 6..7;
-      unused: 8..31 = 0;
+      unused: 8..31;
     };
 
     on %done {
+        if ( self.b.tag != 3 || self.b.unused != 0 )
+            reject;
         apdu.format = Format::U;
     }
 };
@@ -1455,94 +1464,94 @@ type Raw = unit(tid: TypeID, nbytes: uint8) {
 
 function SIQ_rec(siq: SIQ): tuple<spi: bool, bl: bool, sb: bool, nt: bool, iv: bool>
 {
-    return (siq.spi == 1,
-            siq.bl == 1,
-            siq.sb == 1,
-            siq.nt == 1,
-            siq.iv == 1);
+    return (siq.b.spi == 1,
+            siq.b.bl == 1,
+            siq.b.sb == 1,
+            siq.b.nt == 1,
+            siq.b.iv == 1);
 }
 
 function DIQ_rec(diq: DIQ): tuple<dpi: uint8, bl: bool, sb: bool, nt: bool, iv: bool>
 {
-    return (diq.dpi,
-            diq.bl == 1,
-            diq.sb == 1,
-            diq.nt == 1,
-            diq.iv == 1);
+    return (diq.b.dpi,
+            diq.b.bl == 1,
+            diq.b.sb == 1,
+            diq.b.nt == 1,
+            diq.b.iv == 1);
 }
 
 function QD_rec(qd: QD): tuple<sq: uint8, cy: bool, ca: bool, iv: bool>
 {
-    return (qd.sq,
-            qd.cy == 1,
-            qd.ca == 1,
-            qd.iv == 1);
+    return (qd.b.sq,
+            qd.b.cy == 1,
+            qd.b.ca == 1,
+            qd.b.iv == 1);
 }
 
 function QDS_rec(qds: QDS): tuple<ov: bool, bl: bool, sb: bool, nt: bool, iv: bool>
 {
-    return (qds.ov == 1,
-            qds.bl == 1,
-            qds.sb == 1,
-            qds.nt == 1,
-            qds.iv == 1);
+    return (qds.b.ov == 1,
+            qds.b.bl == 1,
+            qds.b.sb == 1,
+            qds.b.nt == 1,
+            qds.b.iv == 1);
 }
 
 function SEP_rec(sep: SEP): tuple<es: uint8, ei: bool, bl: bool, sb: bool, nt: bool, iv: bool>
 {
-    return (sep.es,
-            sep.ei == 1,
-            sep.bl == 1,
-            sep.sb == 1,
-            sep.nt == 1,
-            sep.iv == 1);
+    return (sep.b.es,
+            sep.b.ei == 1,
+            sep.b.bl == 1,
+            sep.b.sb == 1,
+            sep.b.nt == 1,
+            sep.b.iv == 1);
 }
 
 function QDP_rec(qdp: QDP): tuple<ei: bool, bl: bool, sb: bool, nt: bool, iv: bool>
 {
-    return (qdp.ei == 1,
-            qdp.bl == 1,
-            qdp.sb == 1,
-            qdp.nt == 1,
-            qdp.iv == 1);
+    return (qdp.b.ei == 1,
+            qdp.b.bl == 1,
+            qdp.b.sb == 1,
+            qdp.b.nt == 1,
+            qdp.b.iv == 1);
 }
 
 function SEPstart_rec(ss: SEPstart): tuple<gs: bool, sl1: bool, sl2: bool, sl3: bool, sie: bool, srd: bool>
 {
-    return (ss.gs == 1,
-            ss.sl1 == 1,
-            ss.sl2 == 1,
-            ss.sl3 == 1,
-            ss.sie == 1,
-            ss.srd == 1);
+    return (ss.b.gs == 1,
+            ss.b.sl1 == 1,
+            ss.b.sl2 == 1,
+            ss.b.sl3 == 1,
+            ss.b.sie == 1,
+            ss.b.srd == 1);
 }
 
 function OCI_rec(oci: OCI): tuple<gc: bool, cl1: bool, cl2: bool, cl3: bool>
 {
-    return (oci.gc == 1,
-            oci.cl1 == 1,
-            oci.cl2 == 1,
-            oci.cl3 == 1);
+    return (oci.b.gc == 1,
+            oci.b.cl1 == 1,
+            oci.b.cl2 == 1,
+            oci.b.cl3 == 1);
 }
 
 function SCO_rec(sco: SCO): tuple<scs: bool, qu: uint8, se: bool>
 {
-    return (sco.scs == 1, sco.qu, sco.se == 1);
+    return (sco.b.scs == 1, sco.b.qu, sco.b.se == 1);
 }
 
 function DCO_rec(dco: DCO): tuple<dcs: uint8, qu: uint8, se: bool>
 {
-    return (dco.dcs, dco.qu, dco.se == 1);
+    return (dco.b.dcs, dco.b.qu, dco.b.se == 1);
 }
 
 function RCO_rec(rco: RCO): tuple<rcs: uint8, qu: uint8, se: bool>
 {
-    return (rco.rcs, rco.qu, rco.se == 1);
+    return (rco.b.rcs, rco.b.qu, rco.b.se == 1);
 }
 
 function QOS_rec(qos: QOS): tuple<ql: uint8, se: bool>
 {
-    return (qos.ql, qos.se == 1);
+    return (qos.b.ql, qos.b.se == 1);
 }
 
 function VTI_rec(vti: VTI): tuple<val: int8, ts: bool>
@@ -1550,34 +1559,34 @@ function VTI_rec(vti: VTI): tuple<val: int8, ts: bool>
     # Poor man's two's-complement, not sure how to make Spicy treat
     # the 7 value bits as signed integer.
     local x: int8;
-    if (vti.val < 64) {
-        x = int8(vti.val);
+    if (vti.b.val < 64) {
+        x = int8(vti.b.val);
     } else {
-        x = int8(-64) + int8(vti.val & 0x3f);
+        x = int8(-64) + int8(vti.b.val & 0x3f);
     }
-    return (x, vti.ts == 1);
+    return (x, vti.b.ts == 1);
 }
 
 function QCC_rec(qcc: QCC): tuple<rqt: uint8, frz: uint8>
 {
-    return (qcc.rqt, qcc.frz);
+    return (qcc.b.rqt, qcc.b.frz);
 }
 
 function QPM_rec(qpm: QPM): tuple<kpa: uint8, pop: bool, lpc: bool>
 {
-    return (qpm.kpa, qpm.pop == 1, qpm.lpc == 1);
+    return (qpm.b.kpa, qpm.b.pop == 1, qpm.b.lpc == 1);
 }
 
 function CP56Time2a_rec(tt: CP56Time2a):
     tuple<ms: uint16, minute: uint8, iv: bool, hour: uint8, su: bool, day: uint8, dow: uint8, month: uint8, year: uint8>
 {
-    return (tt.ms, tt.minute, tt.iv == 1, tt.hour, tt.su == 1, tt.day, tt.dow, tt.month, tt.year);
+    return (tt.ms, tt.b.minute, tt.b.iv == 1, tt.b2.hour, tt.b2.su == 1, tt.b3.day, tt.b3.dow, tt.b4.month, tt.b5.year);
 }
 
 function CP24Time2a_rec(tt: CP24Time2a):
     tuple<ms: uint16, minute: uint8, iv: bool>
 {
-    return (tt.ms, tt.minute, tt.iv == 1);
+    return (tt.ms, tt.b.minute, tt.b.iv == 1);
 }
 
 public function AsduIdent_rec(id: AsduIdent):
@@ -1935,7 +1944,7 @@ public function C_BO_TA_1_rec(io: C_BO_TA_1_io):
 public function M_EI_NA_1_rec(io: M_EI_NA_1_io):
     tuple<obj_addr: uint64, coi: uint8, lpc: bool>
 {
-    return (io.oa, io.coi, io.lpc == 1);
+    return (io.oa, io.b.coi, io.b.lpc == 1);
 }
 
 public function C_IC_NA_1_rec(io: C_IC_NA_1_io):
